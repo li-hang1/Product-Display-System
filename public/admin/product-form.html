@@ -25,20 +25,19 @@
         <input type="text" id="name" placeholder="如 东北精选秋耳" required maxlength="60">
       </div>
       <div class="form-item">
-        <label>产品分类</label>
-        <input type="text" id="category" list="categoryList" placeholder="如 木耳">
-        <datalist id="categoryList">
-          <option value="木耳"></option>
+        <label>品种</label>
+        <input type="text" id="variety" list="varietyList" placeholder="如 秋耳" maxlength="30">
+        <datalist id="varietyList">
           <option value="秋耳"></option>
           <option value="黑木耳"></option>
-          <option value="干货"></option>
-          <option value="菌菇"></option>
-          <option value="山货"></option>
+          <option value="春耳"></option>
+          <option value="白背木耳"></option>
+          <option value="毛木耳"></option>
         </datalist>
       </div>
       <div class="form-item">
         <label>产地</label>
-        <input type="text" id="origin" list="originList" placeholder="如 黑龙江">
+        <input type="text" id="origin" list="originList" placeholder="如 黑龙江" maxlength="30">
         <datalist id="originList">
           <option value="黑龙江"></option>
           <option value="吉林"></option>
@@ -49,23 +48,48 @@
         </datalist>
       </div>
       <div class="form-item">
-        <label>等级</label>
-        <select id="grade">
-          <option value="">请选择（可不选）</option>
-          <option>特级</option>
-          <option>一级</option>
-          <option>二级</option>
-          <option>三级</option>
-          <option>统货</option>
-        </select>
+        <label>大小</label>
+        <input type="text" id="size" placeholder="如 中大片 / 1-2cm" maxlength="30">
       </div>
       <div class="form-item">
-        <label>规格</label>
-        <input type="text" id="spec" placeholder="如 500g/袋">
+        <label>颜色</label>
+        <input type="text" id="color" placeholder="如 黑褐色" maxlength="30">
+      </div>
+      <div class="form-item">
+        <label>杂质情况</label>
+        <input type="text" id="impurity" placeholder="如 无杂质" maxlength="60">
+      </div>
+      <div class="form-item">
+        <label>是否去根</label>
+        <input type="text" id="rooted" list="rootedList" placeholder="如 已去根" maxlength="20">
+        <datalist id="rootedList">
+          <option value="已去根"></option>
+          <option value="未去根"></option>
+        </datalist>
+      </div>
+      <div class="form-item">
+        <label>泡发率</label>
+        <input type="text" id="soakRate" placeholder="如 1斤可泡发10斤" maxlength="40">
+      </div>
+      <div class="form-item">
+        <label>加工流程</label>
+        <input type="text" id="process" placeholder="如 自然晾晒、去根、分拣、杀菌包装" maxlength="100">
+      </div>
+      <div class="form-item">
+        <label>保质期</label>
+        <input type="text" id="shelfLife" placeholder="如 18个月" maxlength="30">
+      </div>
+      <div class="form-item">
+        <label>添加剂</label>
+        <input type="text" id="additive" list="additiveList" placeholder="如 无" maxlength="30">
+        <datalist id="additiveList">
+          <option value="无"></option>
+          <option value="无添加"></option>
+        </datalist>
       </div>
       <div class="form-item">
         <label>批发价格</label>
-        <input type="text" id="price" placeholder="如 50元/斤">
+        <input type="text" id="price" placeholder="如 50元/斤" maxlength="40">
       </div>
       <div class="form-item">
         <label>联系电话</label>
@@ -78,7 +102,7 @@
         <div class="hint">顾客点击「微信咨询」时展示，可复制添加</div>
       </div>
       <div class="form-item full">
-        <label>产品特点介绍</label>
+        <label>产品特点（一段话介绍）</label>
         <textarea id="features" placeholder="如：肉厚、泡发率高、无根，泡发后色泽黑亮、口感爽脆…"></textarea>
       </div>
 
@@ -239,12 +263,15 @@ document.getElementById('wechatQrInput').addEventListener('change', (e) => {
 async function loadProduct() {
   document.getElementById('modeLabel').textContent = '编辑商品';
   document.getElementById('saveBtn').textContent = '保存修改';
+  const FORM_FIELDS = [
+    'code', 'name', 'variety', 'origin', 'size', 'color', 'impurity', 'rooted',
+    'soakRate', 'process', 'shelfLife', 'additive', 'price', 'phone', 'wechat', 'features'
+  ];
   const data = await apiJSON('/api/products/' + encodeURIComponent(editCode));
   const p = data.product;
-  ['code', 'name', 'category', 'origin', 'spec', 'price', 'phone', 'wechat', 'features'].forEach((k) => {
+  FORM_FIELDS.forEach((k) => {
     document.getElementById(k).value = p[k] || '';
   });
-  document.getElementById('grade').value = p.grade || '';
   mainImage = p.image || '';
   galleryImages = (p.gallery || []).slice();
   wechatQrImage = p.wechatQr || '';
@@ -267,7 +294,11 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
 
   const fd = new FormData();
   fd.append('code', code);
-  ['name', 'category', 'origin', 'grade', 'spec', 'price', 'phone', 'wechat', 'features'].forEach((k) => {
+  const FIELDS = [
+    'name', 'variety', 'origin', 'size', 'color', 'impurity', 'rooted',
+    'soakRate', 'process', 'shelfLife', 'additive', 'price', 'phone', 'wechat', 'features'
+  ];
+  FIELDS.forEach((k) => {
     fd.append(k, document.getElementById(k).value.trim());
   });
   fd.append('keepImage', mainImage);

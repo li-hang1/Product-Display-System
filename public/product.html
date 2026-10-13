@@ -24,22 +24,17 @@
     </div>
 
     <div class="body">
-      <!-- 名称与编号 -->
-      <div class="head">
+      <!-- 左边商品名，右边价格 -->
+      <div class="title-row">
         <h1 id="name"></h1>
-        <span class="code-chip" id="codeChip"></span>
+        <span class="title-price" id="price"></span>
       </div>
+      <div class="code-line" id="codeChip"></div>
 
-      <!-- 产地 / 等级 / 规格 / 分类 -->
-      <div class="info-grid" id="infoGrid"></div>
+      <!-- 十条商品信息（简单列表，不画框） -->
+      <div class="attr-list" id="attrList"></div>
 
-      <!-- 批发价格 -->
-      <div class="price-card" id="priceCard" hidden>
-        <span class="price-label">批发价格</span>
-        <span class="price-value" id="price"></span>
-      </div>
-
-      <!-- 产品特点介绍 -->
+      <!-- 产品特点 -->
       <section class="section" id="featureSection" hidden>
         <h2 class="section-title">产品特点</h2>
         <p class="feature-text" id="features"></p>
@@ -118,15 +113,20 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function infoItem(label, value) {
-    return (
-      '<div class="info-item"><span class="info-label">' +
-      label +
-      '</span><span class="info-value">' +
-      escapeHtml(value) +
-      '</span></div>'
-    );
-  }
+
+  /* 十条商品信息：字段名 → 显示标签 */
+  var ATTRS = [
+    ['variety', '品种'],
+    ['origin', '产地'],
+    ['size', '大小'],
+    ['color', '颜色'],
+    ['impurity', '杂质情况'],
+    ['rooted', '是否去根'],
+    ['soakRate', '泡发率'],
+    ['process', '加工流程'],
+    ['shelfLife', '保质期'],
+    ['additive', '添加剂']
+  ];
 
   function render(p) {
     document.title = p.name + (shopName ? ' - ' + shopName : '');
@@ -148,19 +148,31 @@
       });
     }
 
+    /* 左名称右价格 */
     $('name').textContent = p.name;
+    if (p.price) {
+      $('price').textContent = p.price;
+    } else {
+      $('price').style.display = 'none';
+    }
     $('codeChip').textContent = '编号 ' + p.code;
 
-    var info = '';
-    if (p.origin) info += infoItem('产地', p.origin);
-    if (p.grade) info += infoItem('等级', p.grade);
-    if (p.spec) info += infoItem('规格', p.spec);
-    if (p.category) info += infoItem('分类', p.category);
-    if (info) $('infoGrid').innerHTML = info;
-
-    if (p.price) {
-      $('priceCard').hidden = false;
-      $('price').textContent = p.price;
+    /* 十条信息：只显示有内容的行 */
+    var lines = '';
+    ATTRS.forEach(function (a) {
+      if (p[a[0]]) {
+        lines +=
+          '<div class="attr-line"><span class="attr-label">' +
+          a[1] +
+          '</span><span class="attr-value">' +
+          escapeHtml(p[a[0]]) +
+          '</span></div>';
+      }
+    });
+    if (lines) {
+      $('attrList').innerHTML = lines;
+    } else {
+      $('attrList').style.display = 'none';
     }
 
     if (p.features) {

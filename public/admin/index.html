@@ -79,8 +79,8 @@ function render() {
         <p class="name">${escapeHtml(p.name)}</p>
         <div class="meta">
           <span>编号：<b>${escapeHtml(p.code)}</b></span>
-          ${p.category ? '<span class="tag">' + escapeHtml(p.category) + '</span>' : ''}
-          ${p.grade ? '<span>等级：' + escapeHtml(p.grade) + '</span>' : ''}
+          ${p.variety ? '<span class="tag">' + escapeHtml(p.variety) + '</span>' : ''}
+          ${p.origin ? '<span>产地：' + escapeHtml(p.origin) + '</span>' : ''}
           ${p.price ? '<span class="price-text">' + escapeHtml(p.price) + '</span>' : ''}
         </div>
       </div>
