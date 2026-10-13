@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>商品管理 - 二维码商品展示系统</title>
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">二维码商品展示系统<small>管理后台</small></div>
+  <div class="topbar-actions">
+    <a href="settings.html">系统设置</a>
+    <button id="logoutBtn">退出登录</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="toolbar">
+    <a class="btn btn-primary" href="product-form.html">＋ 新增商品</a>
+    <div class="spacer"></div>
+    <input type="text" id="searchInput" class="search-input" placeholder="搜索名称 / 编号…">
+  </div>
+
+  <div id="list" class="product-list"></div>
+</div>
+
+<!-- 二维码弹窗 -->
+<div class="modal-mask" id="qrModal">
+  <div class="modal-card">
+    <h3 id="qrTitle">商品二维码</h3>
+    <div class="qr-wrap"><img id="qrImg" alt="商品二维码"></div>
+    <div class="qr-url" id="qrUrl"></div>
+    <div class="qr-warn" id="qrWarn" style="display:none">
+      二维码当前指向本机地址（localhost），手机扫码将无法打开。
+      请到「系统设置」把访问地址改为电脑的局域网地址（如 http://192.168.x.x:3000）。
+    </div>
+    <div class="modal-actions">
+      <a class="btn btn-primary" id="qrDownload" download>下载图片</a>
+      <button class="btn" id="qrPrintBtn">打印二维码</button>
+      <button class="btn" id="qrCopyBtn">复制链接</button>
+      <button class="btn" id="qrOpenBtn">打开商品页</button>
+      <button class="btn" id="qrCloseBtn">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+let products = [];
+let currentQrCode = '';
+
+function render() {
+  const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = products.filter(
+    (p) =>
+      !keyword ||
+      (p.name || '').toLowerCase().indexOf(keyword) >= 0 ||
+      (p.code || '').toLowerCase().indexOf(keyword) >= 0
+  );
+  const el = document.getElementById('list');
+  if (!list.length) {
+    el.innerHTML =
+      '<div class="card empty"><div class="icon">📦</div>' +
+      (products.length ? '没有匹配的商品' : '还没有商品，点击左上角「新增商品」创建第一个吧') +
+      '</div>';
+    return;
+  }
+  el.innerHTML = list
+    .map(
+      (p) => `
+    <div class="product-row">
+      ${
+        p.image
+          ? '<img class="product-thumb" src="' + escapeHtml(p.image) + '" alt="">'
+          : '<div class="thumb-placeholder">🍄</div>'
+      }
+      <div class="product-info">
+        <p class="name">${escapeHtml(p.name)}</p>
+        <div class="meta">
+          <span>编号：<b>${escapeHtml(p.code)}</b></span>
+          ${p.category ? '<span class="tag">' + escapeHtml(p.category) + '</span>' : ''}
+          ${p.grade ? '<span>等级：' + escapeHtml(p.grade) + '</span>' : ''}
+          ${p.price ? '<span class="price-text">' + escapeHtml(p.price) + '</span>' : ''}
+        </div>
+      </div>
+      <div class="product-actions">
+        <button class="btn btn-sm btn-primary" onclick="showQr('${escapeHtml(p.code)}')">二维码</button>
+        <a class="btn btn-sm" href="/product/${encodeURIComponent(p.code)}" target="_blank">查看</a>
+        <a class="btn btn-sm" href="product-form.html?code=${encodeURIComponent(p.code)}">编辑</a>
+        <button class="btn btn-sm btn-danger" onclick="removeProduct('${escapeHtml(p.code)}')">删除</button>
+      </div>
+    </div>`
+    )
+    .join('');
+}
+
+async function load() {
+  try {
+    products = await apiJSON('/api/products');
+    render();
+  } catch (e) {
+    toast(e.message, false);
+  }
+}
+
+async function showQr(code) {
+  currentQrCode = code;
+  document.getElementById('qrTitle').textContent = '商品二维码 · ' + code;
+  let url = '';
+  try {
+    const data = await apiJSON('/api/qrcode-data/' + encodeURIComponent(code));
+    url = data.url;
+  } catch (e) {
+    /* 忽略，仅影响链接文字展示 */
+  }
+  document.getElementById('qrImg').src = '/api/qrcode/' + encodeURIComponent(code) + '?t=' + Date.now();
+  document.getElementById('qrUrl').textContent = url ? '二维码内容：' + url : '';
+  document.getElementById('qrWarn').style.display = /localhost|127\.0\.0\.1/.test(url) ? '' : 'none';
+  document.getElementById('qrDownload').href =
+    '/api/qrcode/' + encodeURIComponent(code) + '?download=1&t=' + Date.now();
+  document.getElementById('qrModal').classList.add('show');
+}
+
+async function removeProduct(code) {
+  if (!confirm('确定删除商品 ' + code + ' 吗？\n对应二维码将失效，已上传的图片也会被删除。')) return;
+  try {
+    await apiJSON('/api/products/' + encodeURIComponent(code), 'DELETE');
+    toast('已删除 ' + code);
+    load();
+  } catch (e) {
+    toast(e.message, false);
+  }
+}
+
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    await apiJSON('/api/logout', 'POST', {});
+  } catch (e) {
+    /* 忽略 */
+  }
+  location.href = 'login.html';
+});
+document.getElementById('qrCloseBtn').addEventListener('click', () => {
+  document.getElementById('qrModal').classList.remove('show');
+});
+document.getElementById('qrModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+document.getElementById('qrPrintBtn').addEventListener('click', () => {
+  window.open('qrcode-print.html?code=' + encodeURIComponent(currentQrCode), '_blank');
+});
+document.getElementById('qrOpenBtn').addEventListener('click', () => {
+  window.open('/product/' + encodeURIComponent(currentQrCode), '_blank');
+});
+document.getElementById('qrCopyBtn').addEventListener('click', async () => {
+  const text = document.getElementById('qrUrl').textContent.replace('二维码内容：', '');
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('链接已复制');
+  } catch (e) {
+    toast('复制失败，请手动复制', false);
+  }
+});
+
+(async () => {
+  if (await requireAuth()) load();
+})();
+</script>
+</body>
+</html>

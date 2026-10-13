@@ -1,0 +1,17 @@
+{
+  "name": "qrcode-product-show",
+  "version": "1.0.0",
+  "description": "二维码商品展示系统 - 线下木耳批发店专用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^2.0.1",
+    "qrcode": "^1.5.4"
+  }
+}

@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=yes">
+<title>商品详情</title>
+<link rel="stylesheet" href="/css/product.css">
+</head>
+<body>
+<div id="app" class="page">
+  <div class="loading" id="loading">正在加载商品信息…</div>
+
+  <div class="error-box" id="errorBox" hidden>
+    <div class="error-icon">😟</div>
+    <h2>商品不存在或已下架</h2>
+    <p>请联系店家，或扫一扫其他商品袋上的二维码</p>
+  </div>
+
+  <div id="content" hidden>
+    <!-- 顶部商品大图 -->
+    <div class="hero">
+      <img id="heroImg" alt="商品图片">
+    </div>
+
+    <div class="body">
+      <!-- 名称与编号 -->
+      <div class="head">
+        <h1 id="name"></h1>
+        <span class="code-chip" id="codeChip"></span>
+      </div>
+
+      <!-- 产地 / 等级 / 规格 / 分类 -->
+      <div class="info-grid" id="infoGrid"></div>
+
+      <!-- 批发价格 -->
+      <div class="price-card" id="priceCard" hidden>
+        <span class="price-label">批发价格</span>
+        <span class="price-value" id="price"></span>
+      </div>
+
+      <!-- 产品特点介绍 -->
+      <section class="section" id="featureSection" hidden>
+        <h2 class="section-title">产品特点</h2>
+        <p class="feature-text" id="features"></p>
+      </section>
+
+      <!-- 品质展示 -->
+      <section class="section" id="gallerySection" hidden>
+        <h2 class="section-title">品质展示</h2>
+        <div class="gallery" id="gallery"></div>
+        <p class="gallery-tip">点击图片可放大查看</p>
+      </section>
+
+      <!-- 底部商家名称 -->
+      <footer class="footer">
+        <div class="footer-name" id="shopName"></div>
+        <div class="footer-sub">扫码看货 · 产地直供 · 批发价优</div>
+      </footer>
+    </div>
+
+    <!-- 底部联系按钮 -->
+    <div class="contact-bar" id="contactBar">
+      <a class="btn-call" id="callBtn" href="#">
+        <span>📞</span><span>电话咨询</span>
+      </a>
+      <button class="btn-wechat" id="wechatBtn" type="button">
+        <span>💬</span><span>微信咨询</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 微信咨询弹层 -->
+<div class="mask" id="wechatMask" hidden>
+  <div class="wechat-card">
+    <button class="mask-close" id="wechatClose" type="button">✕</button>
+    <h3>微信咨询</h3>
+    <div id="wechatQrBox" class="wechat-qr-box" hidden>
+      <img id="wechatQrImg" alt="微信二维码">
+      <p class="wechat-tip">微信扫一扫 / 长按识别二维码，添加店家微信</p>
+    </div>
+    <div id="wechatIdBox" class="wechat-id-box" hidden>
+      <p style="margin:6px 0 0;color:#8a8178;font-size:13px">店家微信号：</p>
+      <p class="wechat-id" id="wechatId"></p>
+      <button class="copy-btn" id="copyWechatBtn" type="button">复制微信号</button>
+      <p class="wechat-tip">复制后打开微信 → 添加朋友 → 粘贴微信号搜索</p>
+    </div>
+  </div>
+</div>
+
+<!-- 图片放大查看 -->
+<div class="mask lightbox" id="lightbox" hidden>
+  <img id="lightboxImg" alt="预览大图">
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+(function () {
+  var PLACEHOLDER = (function () {
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">' +
+      '<rect width="800" height="600" fill="#efe9df"/>' +
+      '<text x="400" y="290" font-size="120" text-anchor="middle">🍄</text>' +
+      '<text x="400" y="380" font-size="30" fill="#a09482" text-anchor="middle" font-family="sans-serif">暂无图片</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  })();
+
+  var code = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
+  var shopName = '';
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function infoItem(label, value) {
+    return (
+      '<div class="info-item"><span class="info-label">' +
+      label +
+      '</span><span class="info-value">' +
+      escapeHtml(value) +
+      '</span></div>'
+    );
+  }
+
+  function render(p) {
+    document.title = p.name + (shopName ? ' - ' + shopName : '');
+    $('loading').hidden = true;
+    $('content').hidden = false;
+
+    var hero = $('heroImg');
+    hero.src = p.image || PLACEHOLDER;
+    hero.onerror = function () {
+      hero.onerror = null;
+      hero.src = PLACEHOLDER;
+      hero.classList.remove('zoomable');
+    };
+    if (p.image) {
+      hero.classList.add('zoomable');
+      hero.addEventListener('click', function () {
+        $('lightboxImg').src = p.image;
+        $('lightbox').hidden = false;
+      });
+    }
+
+    $('name').textContent = p.name;
+    $('codeChip').textContent = '编号 ' + p.code;
+
+    var info = '';
+    if (p.origin) info += infoItem('产地', p.origin);
+    if (p.grade) info += infoItem('等级', p.grade);
+    if (p.spec) info += infoItem('规格', p.spec);
+    if (p.category) info += infoItem('分类', p.category);
+    if (info) $('infoGrid').innerHTML = info;
+
+    if (p.price) {
+      $('priceCard').hidden = false;
+      $('price').textContent = p.price;
+    }
+
+    if (p.features) {
+      $('featureSection').hidden = false;
+      $('features').textContent = p.features;
+    }
+
+    var gallery = (p.gallery || []).filter(Boolean);
+    if (gallery.length) {
+      $('gallerySection').hidden = false;
+      $('gallery').innerHTML = gallery
+        .map(function (url, i) {
+          return '<img src="' + escapeHtml(url) + '" alt="品质展示图' + (i + 1) + '">';
+        })
+        .join('');
+      Array.prototype.forEach.call($('gallery').children, function (img) {
+        img.addEventListener('click', function () {
+          $('lightboxImg').src = img.src;
+          $('lightbox').hidden = false;
+        });
+      });
+    }
+
+    $('shopName').textContent = shopName || '木耳批发商行';
+
+    /* 联系按钮 */
+    if (p.phone) {
+      $('callBtn').href = 'tel:' + String(p.phone).replace(/[^0-9+]/g, '');
+    } else {
+      $('callBtn').style.display = 'none';
+    }
+    if (p.wechat || p.wechatQr) {
+      if (p.wechatQr) {
+        $('wechatQrBox').hidden = false;
+        $('wechatQrImg').src = p.wechatQr;
+      }
+      if (p.wechat) {
+        $('wechatIdBox').hidden = false;
+        $('wechatId').textContent = p.wechat;
+      }
+    } else {
+      $('wechatBtn').style.display = 'none';
+    }
+    if (!p.phone && !p.wechat && !p.wechatQr) {
+      $('contactBar').style.display = 'none';
+    }
+  }
+
+  /* 事件绑定 */
+  $('wechatBtn').addEventListener('click', function () {
+    $('wechatMask').hidden = false;
+  });
+  $('wechatClose').addEventListener('click', function () {
+    $('wechatMask').hidden = true;
+  });
+  $('wechatMask').addEventListener('click', function (e) {
+    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+  });
+  $('lightbox').addEventListener('click', function () {
+    this.hidden = true;
+  });
+
+  $('copyWechatBtn').addEventListener('click', function () {
+    var text = $('wechatId').textContent;
+    function ok() {
+      showToast('已复制：' + text);
+    }
+    function fail() {
+      showToast('复制失败，请手动记下微信号');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, fail);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        ok();
+      } catch (e) {
+        fail();
+      }
+      document.body.removeChild(ta);
+    }
+  });
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var el = $('toastEl');
+    el.textContent = msg;
+    el.className = 'toast show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      el.className = 'toast';
+    }, 2000);
+  }
+
+  function showError() {
+    $('loading').hidden = true;
+    $('errorBox').hidden = false;
+  }
+
+  /* 加载商品数据 */
+  if (!code) {
+    showError();
+    return;
+  }
+  fetch('/api/products/' + encodeURIComponent(code))
+    .then(function (res) {
+      return res.json().then(function (d) {
+        return { ok: res.ok, d: d };
+      });
+    })
+    .then(function (r) {
+      if (!r.ok || !r.d.product) {
+        showError();
+        return;
+      }
+      shopName = r.d.shopName || '';
+      render(r.d.product);
+    })
+    .catch(showError);
+})();
+</script>
+</body>
+</html>

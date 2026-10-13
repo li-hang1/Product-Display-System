@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>系统设置 - 管理后台</title>
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">二维码商品展示系统<small>系统设置</small></div>
+  <div class="topbar-actions"><a href="index.html">← 返回列表</a></div>
+</header>
+
+<div class="container">
+  <div class="card" style="max-width:680px">
+    <form id="settingsForm">
+      <div class="form-item">
+        <label>商家名称</label>
+        <input type="text" id="shopName" maxlength="30" placeholder="如 诚信木耳批发商行">
+        <div class="hint">显示在顾客手机页面底部</div>
+      </div>
+
+      <div class="form-item" style="margin-top:14px">
+        <label>访问地址（用于生成二维码）</label>
+        <input type="text" id="siteUrl" placeholder="如 http://192.168.1.100:3000 或 https://shop.example.com">
+        <div class="hint">
+          手机扫码测试时：填电脑的局域网地址（手机与电脑需连同一个 Wi-Fi），点击下方推荐地址即可填入。<br>
+          部署到服务器后：改成域名地址。留空则按当前打开后台的地址生成。
+        </div>
+        <div class="suggest-list" id="suggestList"></div>
+      </div>
+
+      <div class="form-section" style="margin-top:22px">修改管理密码（可不改）</div>
+      <div class="form-grid" style="margin-top:12px">
+        <div class="form-item">
+          <label>当前密码</label>
+          <input type="password" id="passwordCurrent" autocomplete="current-password">
+        </div>
+        <div class="form-item">
+          <label>新密码（至少 4 位）</label>
+          <input type="password" id="passwordNew" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div style="margin-top:18px;display:flex;gap:12px">
+        <button type="submit" class="btn btn-primary">保存设置</button>
+        <a class="btn" href="index.html">返回</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+async function load() {
+  const s = await apiJSON('/api/settings');
+  document.getElementById('shopName').value = s.shopName || '';
+  document.getElementById('siteUrl').value = s.siteUrl || '';
+  try {
+    const info = await apiJSON('/api/server-info');
+    const box = document.getElementById('suggestList');
+    (info.addresses || []).forEach((a) => {
+      const url = 'http://' + a.address + ':' + info.port;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'suggest-item';
+      chip.textContent = url;
+      chip.title = '网卡：' + a.name + '，点击填入';
+      chip.onclick = () => {
+        document.getElementById('siteUrl').value = url;
+      };
+      box.appendChild(chip);
+    });
+  } catch (e) {
+    /* 拿不到网卡信息不影响使用 */
+  }
+}
+
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await apiJSON('/api/settings', 'POST', {
+      shopName: document.getElementById('shopName').value.trim(),
+      siteUrl: document.getElementById('siteUrl').value.trim(),
+      passwordCurrent: document.getElementById('passwordCurrent').value,
+      passwordNew: document.getElementById('passwordNew').value
+    });
+    toast('保存成功');
+    document.getElementById('passwordCurrent').value = '';
+    document.getElementById('passwordNew').value = '';
+  } catch (err) {
+    toast(err.message, false);
+  }
+});
+
+(async () => {
+  if (await requireAuth()) load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新增商品 - 管理后台</title>
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">二维码商品展示系统<small id="modeLabel">新增商品</small></div>
+  <div class="topbar-actions"><a href="index.html">← 返回列表</a></div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <form id="productForm" class="form-grid">
+      <div class="form-item">
+        <label><span class="req">*</span>商品编号</label>
+        <input type="text" id="code" placeholder="如 MD001" required maxlength="32">
+        <div class="hint">仅字母 / 数字 / 中划线 / 下划线，二维码按编号自动生成</div>
+      </div>
+      <div class="form-item">
+        <label><span class="req">*</span>商品名称</label>
+        <input type="text" id="name" placeholder="如 东北精选秋耳" required maxlength="60">
+      </div>
+      <div class="form-item">
+        <label>产品分类</label>
+        <input type="text" id="category" list="categoryList" placeholder="如 木耳">
+        <datalist id="categoryList">
+          <option value="木耳"></option>
+          <option value="秋耳"></option>
+          <option value="黑木耳"></option>
+          <option value="干货"></option>
+          <option value="菌菇"></option>
+          <option value="山货"></option>
+        </datalist>
+      </div>
+      <div class="form-item">
+        <label>产地</label>
+        <input type="text" id="origin" list="originList" placeholder="如 黑龙江">
+        <datalist id="originList">
+          <option value="黑龙江"></option>
+          <option value="吉林"></option>
+          <option value="云南"></option>
+          <option value="浙江"></option>
+          <option value="湖北"></option>
+          <option value="河南"></option>
+        </datalist>
+      </div>
+      <div class="form-item">
+        <label>等级</label>
+        <select id="grade">
+          <option value="">请选择（可不选）</option>
+          <option>特级</option>
+          <option>一级</option>
+          <option>二级</option>
+          <option>三级</option>
+          <option>统货</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label>规格</label>
+        <input type="text" id="spec" placeholder="如 500g/袋">
+      </div>
+      <div class="form-item">
+        <label>批发价格</label>
+        <input type="text" id="price" placeholder="如 50元/斤">
+      </div>
+      <div class="form-item">
+        <label>联系电话</label>
+        <input type="text" id="phone" placeholder="如 13800000000">
+        <div class="hint">顾客点击「电话咨询」直接拨打此号码</div>
+      </div>
+      <div class="form-item">
+        <label>微信号码</label>
+        <input type="text" id="wechat" placeholder="微信号，如 muer8888">
+        <div class="hint">顾客点击「微信咨询」时展示，可复制添加</div>
+      </div>
+      <div class="form-item full">
+        <label>产品特点介绍</label>
+        <textarea id="features" placeholder="如：肉厚、泡发率高、无根，泡发后色泽黑亮、口感爽脆…"></textarea>
+      </div>
+
+      <div class="form-section full">图片（可不传，传图后商品页更吸引顾客）</div>
+
+      <div class="form-item full">
+        <label>商品主图（手机页顶部大图）</label>
+        <div class="upload-box">
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('imageInput').click()">选择图片</button>
+          <input type="file" id="imageInput" accept="image/*" hidden>
+          <div class="upload-preview" id="imagePreview"></div>
+        </div>
+      </div>
+
+      <div class="form-item full">
+        <label>品质展示图（最多 9 张，展示在「品质展示」区域）</label>
+        <div class="upload-box">
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('galleryInput').click()">添加图片</button>
+          <input type="file" id="galleryInput" accept="image/*" multiple hidden>
+          <div class="upload-preview" id="galleryPreview"></div>
+        </div>
+      </div>
+
+      <div class="form-item full">
+        <label>微信二维码图片（可选）</label>
+        <div class="upload-box">
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('wechatQrInput').click()">选择图片</button>
+          <input type="file" id="wechatQrInput" accept="image/*" hidden>
+          <div class="upload-preview" id="wechatQrPreview"></div>
+          <div class="hint">上传自己的微信收款/加好友二维码截图后，顾客在手机页可直接长按识别加微信</div>
+        </div>
+      </div>
+
+      <div class="full" style="display:flex;gap:12px;margin-top:8px">
+        <button type="submit" class="btn btn-primary" id="saveBtn">保存商品</button>
+        <a class="btn" href="index.html">取消</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const editCode = params.get('code'); // 有值 = 编辑模式
+
+let mainImage = '';        // 保留的旧主图 URL
+let mainFile = null;       // 新选的主图文件
+let galleryImages = [];    // 保留的旧品质图 URL
+let newGalleryFiles = [];  // 新增的品质图文件
+let wechatQrImage = '';    // 保留的旧微信二维码 URL
+let wechatQrFile = null;   // 新选的微信二维码文件
+
+function previewItem(src, onRemove) {
+  const wrap = document.createElement('div');
+  wrap.className = 'upload-item';
+  const img = document.createElement('img');
+  img.src = src;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'remove';
+  btn.textContent = '✕';
+  btn.onclick = onRemove;
+  wrap.appendChild(img);
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+function addPickerItem(container, onPick) {
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'upload-add';
+  add.textContent = '＋';
+  add.title = '添加图片';
+  add.onclick = onPick;
+  container.appendChild(add);
+}
+
+function renderImagePreview() {
+  const box = document.getElementById('imagePreview');
+  box.innerHTML = '';
+  const src = mainFile ? URL.createObjectURL(mainFile) : mainImage;
+  if (src) {
+    box.appendChild(
+      previewItem(src, () => {
+        mainFile = null;
+        mainImage = '';
+        renderImagePreview();
+      })
+    );
+  }
+}
+
+function renderGalleryPreview() {
+  const box = document.getElementById('galleryPreview');
+  box.innerHTML = '';
+  galleryImages.forEach((url, i) => {
+    box.appendChild(
+      previewItem(url, () => {
+        galleryImages.splice(i, 1);
+        renderGalleryPreview();
+      })
+    );
+  });
+  newGalleryFiles.forEach((file, i) => {
+    box.appendChild(
+      previewItem(URL.createObjectURL(file), () => {
+        newGalleryFiles.splice(i, 1);
+        renderGalleryPreview();
+      })
+    );
+  });
+  if (galleryImages.length + newGalleryFiles.length < 9) {
+    addPickerItem(box, () => document.getElementById('galleryInput').click());
+  }
+}
+
+function renderWechatQrPreview() {
+  const box = document.getElementById('wechatQrPreview');
+  box.innerHTML = '';
+  const src = wechatQrFile ? URL.createObjectURL(wechatQrFile) : wechatQrImage;
+  if (src) {
+    box.appendChild(
+      previewItem(src, () => {
+        wechatQrFile = null;
+        wechatQrImage = '';
+        renderWechatQrPreview();
+      })
+    );
+  }
+}
+
+document.getElementById('imageInput').addEventListener('change', (e) => {
+  if (e.target.files[0]) {
+    mainFile = e.target.files[0];
+    mainImage = '';
+    renderImagePreview();
+  }
+  e.target.value = '';
+});
+document.getElementById('galleryInput').addEventListener('change', (e) => {
+  for (const f of e.target.files) {
+    if (galleryImages.length + newGalleryFiles.length >= 9) break;
+    newGalleryFiles.push(f);
+  }
+  renderGalleryPreview();
+  e.target.value = '';
+});
+document.getElementById('wechatQrInput').addEventListener('change', (e) => {
+  if (e.target.files[0]) {
+    wechatQrFile = e.target.files[0];
+    wechatQrImage = '';
+    renderWechatQrPreview();
+  }
+  e.target.value = '';
+});
+
+async function loadProduct() {
+  document.getElementById('modeLabel').textContent = '编辑商品';
+  document.getElementById('saveBtn').textContent = '保存修改';
+  const data = await apiJSON('/api/products/' + encodeURIComponent(editCode));
+  const p = data.product;
+  ['code', 'name', 'category', 'origin', 'spec', 'price', 'phone', 'wechat', 'features'].forEach((k) => {
+    document.getElementById(k).value = p[k] || '';
+  });
+  document.getElementById('grade').value = p.grade || '';
+  mainImage = p.image || '';
+  galleryImages = (p.gallery || []).slice();
+  wechatQrImage = p.wechatQr || '';
+  renderImagePreview();
+  renderGalleryPreview();
+  renderWechatQrPreview();
+}
+
+document.getElementById('productForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = document.getElementById('code').value.trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{1,32}$/.test(code)) {
+    toast('商品编号只能用字母、数字、中划线、下划线', false);
+    return;
+  }
+  if (galleryImages.length + newGalleryFiles.length > 9) {
+    toast('品质展示图最多 9 张', false);
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('code', code);
+  ['name', 'category', 'origin', 'grade', 'spec', 'price', 'phone', 'wechat', 'features'].forEach((k) => {
+    fd.append(k, document.getElementById(k).value.trim());
+  });
+  fd.append('keepImage', mainImage);
+  fd.append('keepGallery', JSON.stringify(galleryImages));
+  fd.append('keepWechatQr', wechatQrImage);
+  if (mainFile) fd.append('image', mainFile);
+  if (wechatQrFile) fd.append('wechatQr', wechatQrFile);
+  newGalleryFiles.forEach((f) => fd.append('gallery', f));
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+  try {
+    if (editCode) {
+      await apiForm('/api/products/' + encodeURIComponent(editCode), 'PUT', fd);
+      toast('修改成功');
+    } else {
+      await apiForm('/api/products', 'POST', fd);
+      toast('添加成功，二维码已自动生成');
+    }
+    setTimeout(() => {
+      location.href = 'index.html';
+    }, 600);
+  } catch (err) {
+    toast(err.message, false);
+    btn.disabled = false;
+    btn.textContent = editCode ? '保存修改' : '保存商品';
+  }
+});
+
+renderImagePreview();
+renderGalleryPreview();
+renderWechatQrPreview();
+(async () => {
+  if (!(await requireAuth())) return;
+  if (editCode) {
+    try {
+      await loadProduct();
+    } catch (e) {
+      toast(e.message, false);
+    }
+  }
+})();
+</script>
+</body>
+</html>

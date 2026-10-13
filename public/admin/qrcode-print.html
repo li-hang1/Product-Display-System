@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>打印二维码</title>
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+body { background: #ece7de; padding: 20px 10px 40px; }
+.controls {
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.controls select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); font-size: 14px; font-family: inherit; }
+.sheet {
+  width: 210mm;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  display: grid;
+  gap: 4mm;
+  padding: 6mm;
+  align-content: start;
+}
+.sheet.cols-1 { grid-template-columns: 1fr; }
+.sheet.cols-2 { grid-template-columns: 1fr 1fr; }
+.sheet.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.label {
+  border: 1px dashed #b9b1a4;
+  border-radius: 2mm;
+  padding: 4mm 3mm;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.2mm;
+  page-break-inside: avoid;
+}
+.label-name { font-size: 4.6mm; font-weight: 700; color: #2a241d; }
+.label-qr { width: 46mm; height: 46mm; }
+.label-code { font-size: 3.6mm; color: #444; letter-spacing: 0.5px; }
+.label-tip { font-size: 3mm; color: #8a8178; }
+.sheet.cols-1 .label { padding: 12mm 6mm; gap: 5mm; }
+.sheet.cols-1 .label-name { font-size: 9mm; }
+.sheet.cols-1 .label-qr { width: 110mm; height: 110mm; }
+.sheet.cols-1 .label-code { font-size: 6mm; }
+.sheet.cols-1 .label-tip { font-size: 4.5mm; }
+@media print {
+  body { background: #fff; padding: 0; }
+  .controls { display: none !important; }
+  .sheet { box-shadow: none; width: auto; padding: 0; gap: 4mm; }
+  @page { size: A4 portrait; margin: 8mm; }
+}
+</style>
+</head>
+<body>
+<div class="controls">
+  <strong>打印二维码标签</strong>
+  <label>每页数量：
+    <select id="copies">
+      <option value="1">1 张（大标签）</option>
+      <option value="2">2 张</option>
+      <option value="4" selected>4 张</option>
+      <option value="6">6 张</option>
+      <option value="9">9 张</option>
+      <option value="12">12 张</option>
+    </select>
+  </label>
+  <button class="btn btn-primary" onclick="window.print()">🖨 打印</button>
+  <a class="btn" href="index.html">返回列表</a>
+  <span style="color:var(--muted);font-size:13px">提示：点击打印后在弹出的打印窗口中选择已连接的打印机</span>
+</div>
+
+<div class="sheet cols-2" id="sheet"></div>
+
+<script>
+const code = new URLSearchParams(location.search).get('code') || '';
+const qrSrc = '/api/qrcode/' + encodeURIComponent(code);
+let productName = code;
+let shopName = '';
+
+function build() {
+  const n = Number(document.getElementById('copies').value);
+  const sheet = document.getElementById('sheet');
+  sheet.className = 'sheet ' + (n === 1 ? 'cols-1' : n <= 6 ? 'cols-2' : 'cols-3');
+  sheet.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const div = document.createElement('div');
+    div.className = 'label';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'label-name';
+    nameEl.textContent = productName;
+    const img = document.createElement('img');
+    img.className = 'label-qr';
+    img.src = qrSrc;
+    img.alt = '二维码';
+    const codeEl = document.createElement('div');
+    codeEl.className = 'label-code';
+    codeEl.textContent = '编号：' + code + (shopName ? ' · ' + shopName : '');
+    const tipEl = document.createElement('div');
+    tipEl.className = 'label-tip';
+    tipEl.textContent = '扫码查看商品详情与批发价格';
+    div.appendChild(nameEl);
+    div.appendChild(img);
+    div.appendChild(codeEl);
+    div.appendChild(tipEl);
+    sheet.appendChild(div);
+  }
+}
+
+document.getElementById('copies').addEventListener('change', build);
+
+if (!code) {
+  document.getElementById('sheet').innerHTML =
+    '<div class="label"><div class="label-name">缺少商品编号参数</div></div>';
+} else {
+  fetch('/api/products/' + encodeURIComponent(code))
+    .then((r) => r.json())
+    .then((d) => {
+      if (d && d.product) {
+        productName = d.product.name || code;
+        shopName = d.shopName || '';
+      }
+      document.title = '打印二维码 - ' + productName;
+      build();
+    })
+    .catch(build);
+}
+</script>
+</body>
+</html>

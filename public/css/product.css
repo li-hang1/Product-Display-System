@@ -1,0 +1,229 @@
+/* 顾客手机端商品展示页样式 */
+:root {
+  --primary: #b45309;
+  --bg: #f7f4ee;
+  --card: #ffffff;
+  --text: #29241e;
+  --muted: #8a8178;
+  --line: #ece5d8;
+  --price: #d81e1e;
+  --wechat: #07c160;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Segoe UI', sans-serif;
+  background: #efe9df;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  padding-bottom: 76px;
+}
+
+.loading { text-align: center; padding: 120px 0; color: var(--muted); letter-spacing: 1px; }
+.error-box { text-align: center; padding: 100px 24px; }
+.error-box .error-icon { font-size: 54px; }
+.error-box h2 { font-size: 19px; margin: 14px 0 6px; }
+.error-box p { color: var(--muted); margin: 0; }
+
+/* 顶部大图 */
+.hero img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #efe9df;
+}
+.hero img.zoomable { cursor: zoom-in; }
+
+/* 主体 */
+.body { padding: 14px 14px 24px; }
+.head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.head h1 { font-size: 21px; margin: 0; flex: 1; min-width: 60%; }
+.code-chip {
+  background: #f0e7d8;
+  color: #8a5a19;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* 产地 / 等级 / 规格 / 分类 */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.info-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.info-label { font-size: 12px; color: var(--muted); }
+.info-value { font-size: 15px; font-weight: 600; }
+
+/* 价格 */
+.price-card {
+  margin-top: 12px;
+  background: linear-gradient(135deg, #fff8ec, #ffedd5);
+  border: 1px solid #f5e0bd;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.price-label { font-size: 13px; color: #935c00; }
+.price-value { font-size: 26px; font-weight: 800; color: var(--price); letter-spacing: 0.5px; }
+
+/* 介绍 / 图集 */
+.section { margin-top: 18px; }
+.section-title { font-size: 16px; margin: 0 0 10px; padding-left: 10px; border-left: 4px solid var(--primary); }
+.feature-text {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0;
+  white-space: pre-wrap;
+  color: #4a443c;
+}
+.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.gallery img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #efe9df;
+  cursor: zoom-in;
+  display: block;
+}
+.gallery-tip { color: #b3a99a; font-size: 12px; margin: 8px 2px 0; }
+
+/* 底部商家名称 */
+.footer { text-align: center; padding: 26px 0 10px; color: var(--muted); }
+.footer-name { font-size: 15px; font-weight: 600; color: #6b6155; }
+.footer-sub { font-size: 12px; margin-top: 4px; letter-spacing: 1px; }
+
+/* 底部联系条 */
+.contact-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -6px 20px rgba(60, 45, 20, 0.1);
+  z-index: 50;
+}
+.btn-call, .btn-wechat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  border-radius: 999px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+}
+.btn-call { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 4px 12px rgba(180, 83, 9, 0.35); }
+.btn-wechat { background: var(--wechat); box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3); }
+.btn-call:active, .btn-wechat:active { transform: translateY(1px); }
+
+/* 弹层 */
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.wechat-card {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 26px 22px 22px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+.wechat-card h3 { margin: 0 0 14px; font-size: 17px; }
+.mask-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+}
+.wechat-qr-box img {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.wechat-tip { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+.wechat-id-box .wechat-id { font-size: 20px; font-weight: 700; letter-spacing: 1px; margin: 4px 0 12px; }
+.copy-btn {
+  border: none;
+  background: var(--wechat);
+  color: #fff;
+  border-radius: 999px;
+  padding: 9px 26px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* 图片放大 */
+.lightbox { background: rgba(0, 0, 0, 0.92); cursor: zoom-out; }
+.lightbox img { max-width: 94vw; max-height: 90vh; border-radius: 6px; }
+
+/* 提示 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(35, 28, 20, 0.92);
+  color: #fff;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s;
+  z-index: 120;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (min-width: 641px) {
+  body { background: #efe9df; }
+  .page { box-shadow: 0 0 40px rgba(60, 45, 20, 0.12); }
+}

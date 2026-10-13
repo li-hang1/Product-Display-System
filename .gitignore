@@ -1,0 +1,20 @@
+# ===== 以下内容不上传 GitHub =====
+
+# 依赖（服务器上用 npm install 重新安装）
+node_modules/
+
+# 自带的便携版 Node.js（体积大，非项目代码）
+tools/
+
+# 运行时数据（含管理密码、登录密钥、真实商品信息/联系电话/微信号）
+data/
+# 如只想忽略敏感文件、保留演示数据，可改为：
+# data/secret.key
+# data/settings.json
+
+# 用户上传的商品图片（业务数据）
+uploads/
+
+# 系统文件
+Thumbs.db
+Desktop.ini

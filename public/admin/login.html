@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录 - 二维码商品展示系统</title>
+<link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="auth-body">
+<div class="auth-card">
+  <div class="auth-logo">🍄</div>
+  <h1>二维码商品展示系统</h1>
+  <p class="auth-sub">木耳批发店 · 管理后台</p>
+  <form id="loginForm">
+    <input type="password" id="password" placeholder="请输入管理密码" autocomplete="current-password" required>
+    <button type="submit" class="btn btn-primary btn-block">登 录</button>
+  </form>
+  <div id="err" class="auth-err"></div>
+  <p class="auth-tip">默认密码：admin123（登录后可在「系统设置」中修改）</p>
+</div>
+<script src="../js/common.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('password').value;
+  document.getElementById('err').textContent = '';
+  try {
+    await apiJSON('/api/login', 'POST', { password });
+    location.href = 'index.html';
+  } catch (err) {
+    document.getElementById('err').textContent = err.message;
+  }
+});
+</script>
+</body>
+</html>
